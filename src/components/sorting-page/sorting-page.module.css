@@ -1,0 +1,34 @@
+.form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 48px;
+}
+
+.choices {
+  display: flex;
+  padding: 0;
+  margin: 0 52px 0 0;
+  border: none;
+  gap: 40px;
+}
+
+.button {
+  width: var(--button-width);
+}
+
+.button:nth-of-type(1) {
+  margin-right: 12px;
+}
+
+.button:nth-of-type(2) {
+  margin-right: 80px;
+}
+
+.columns {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 10px;
+  height: 340px;
+}

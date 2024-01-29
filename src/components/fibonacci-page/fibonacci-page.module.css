@@ -1,0 +1,13 @@
+.container {
+  display: flex;
+  gap: 12px;
+  max-width: 567px;
+  margin: 48px auto 0;
+}
+
+.circles {
+  max-width: 944px;
+  justify-content: center;
+  gap: 48px 16px;
+  flex-flow: row wrap;
+}
