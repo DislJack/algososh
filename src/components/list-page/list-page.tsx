@@ -285,7 +285,8 @@ export const ListPage: React.FC = () => {
             isLoading.removeFromHead || 
             isLoading.removeFromTail || 
             isLoading.addToHead || 
-            isLoading.removeByIndex} 
+            isLoading.removeByIndex ||
+            Number(index) > arrayElements.length - 1} 
         />
         <Button 
           type="button" 
@@ -299,7 +300,8 @@ export const ListPage: React.FC = () => {
             isLoading.removeFromHead || 
             isLoading.removeFromTail || 
             isLoading.addByIndex || 
-            isLoading.addToHead}
+            isLoading.addToHead ||
+            Number(index) > arrayElements.length - 1}
         />
       </div>
       <div className={styles.container}>
