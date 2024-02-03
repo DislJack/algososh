@@ -1,0 +1,18 @@
+.container {
+  display: flex;
+  justify-content: center;
+  gap: 78px 12px;
+  flex-flow: row wrap;
+}
+
+.container:nth-of-type(2) {
+  margin-top: 48px;
+}
+
+.input {
+  max-width: 377px;
+}
+
+.button:nth-of-type(2) {
+  margin-right: 68px;
+}

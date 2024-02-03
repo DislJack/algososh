@@ -64,7 +64,16 @@ export const FibonacciPage: React.FC = () => {
     <SolutionLayout title="Последовательность Фибоначчи" isLoading={isLoading}>
       <form className={styles.container}>
         <Input state={value} setState={setValue} max={19} type="tel" isLimitText={true} />
-        <Button type="submit" text="Рассчитать" onClick={startAnimation} disabled={numberValue < 0 || numberValue > 19 || !value.match(/^[0-9]+$/) ? true : false} isLoader={isLoading} />
+        <Button 
+          type="submit" 
+          text="Рассчитать" 
+          onClick={startAnimation} 
+          disabled={
+            numberValue < 0 || 
+            numberValue > 19 || 
+            !value.match(/^[0-9]+$/) ? true : false} 
+          isLoader={isLoading} 
+        />
       </form>
       <div className={`${styles.container} ${styles.circles}`}>
         {fibonacciArray.map((number, index) => {
