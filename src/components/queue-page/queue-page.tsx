@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import styles from './queuq-page.module.css';
 import { Input } from "../ui/input/input";
@@ -12,64 +12,64 @@ type TQueueElement = {
   state: ElementStates
 }
 
+type TIsLoading = {
+  add: boolean;
+  remove: boolean;
+  clear: boolean;
+}
+
 export const QueuePage: React.FC = () => {
   // Стейт на инпут.
   const [value, setValue] = useState<string>('');
   // Стейт на загрузку с блокировкой кнопок.
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  // Стейт для обновления класса очереди.
-  const [queueElements, setQueueElements] = useState<TQueueElement[]>([]);
-  // Стейт, который
-  const [body, setBody] = useState<{head: number ; tail: number }>({head: 0, tail: 0});
+  const [isLoading, setIsLoading] = useState<TIsLoading>({
+    add: false,
+    remove: false,
+    clear: false
+  });
 
   // Создание очереди из структуры.
-  const queue = new Queue<TQueueElement>(queueElements, body.head, body.tail);
+  const queue = useMemo(() => new Queue<TQueueElement>(7), []);
+
+  const queueDelay = 500;
 
 
   // Метод описывающий добавление элемента в очередь с анимацией
   const enqueue = () => {
-    setIsLoading(true);
+    setIsLoading({...isLoading, add: true});
     // Сам метод добавления в очередь.
-    queue.enqueue({...queue.elements[queue.tail], state: ElementStates.Changing})
-    setQueueElements([...queue.elements]);
+    queue.elements[queue.tail] = {...queue.elements[queue.tail], state: ElementStates.Changing};
     setTimeout(() => {
-      queue.elements[queue.tail - 1] = {element: value, state: ElementStates.Default};
-      setQueueElements([...queue.elements]);
+      queue.enqueue({element: value, state: ElementStates.Default})
       setValue('');
-      if (queue.tail <= 7) {
-        setBody({head: queue.head, tail: queue.tail});
-      }
-      setIsLoading(false);
-    }, 500)
+      setIsLoading({...isLoading, add: false});
+    }, queueDelay)
   }
 
 
   // Метод удаления элементов из очереди с анимацией.
   const dequeue = () => {
-    setIsLoading(true);
+    setIsLoading({...isLoading, remove: true});
     queue.elements[queue.head] = {...queue.elements[queue.head], state: ElementStates.Changing};
     setTimeout(() => {
       // Сам метод удаления из очереди.
       queue.dequeue();
       // Хитрые манипуляции, чтобы очередь была заполнена, но пустым элементом.
       queue.elements.unshift({element: '', state: ElementStates.Default});
-      if (queue.head <= 6) {
-        setBody({head: queue.head, tail: queue.tail});
-      }
-      setIsLoading(false);
-    }, 500);
+      setIsLoading({...isLoading, remove: false});
+    }, queueDelay);
   }
 
 
   // Метод обновления очереди и заполения пустыми элементами.
   const clear = () => {
+    setIsLoading({...isLoading, clear: true})
     queue.clear();
-    setQueueElements([...queue.elements]);
     for (let i = 0; i < 7; i++) {
-      queueElements[i] = {element: '', state: ElementStates.Default};
-      setQueueElements([...queueElements]);
+      queue.enqueue({element: '', state: ElementStates.Default});
     }
-    setBody({head: queue.head, tail: queue.tail});
+    queue.tail = 0;
+    setIsLoading({...isLoading, clear: false});
   }
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export const QueuePage: React.FC = () => {
   }, [])
 
   return (
-    <SolutionLayout title="Очередь" isLoading={isLoading}>
+    <SolutionLayout title="Очередь" isLoading={isLoading.add || isLoading.remove || isLoading.clear}>
       <div className={styles.container}>
         <Input 
           state={value} 
@@ -89,9 +89,10 @@ export const QueuePage: React.FC = () => {
         <Button 
           extraClass={styles.button} 
           text="Добавить" 
+          isLoader={isLoading.add}
           disabled={
             !value.match(/^[0-9]+$/) || 
-            isLoading === true || 
+            isLoading.remove || isLoading.clear || 
             queue.tail - 1 === 6 ? true : false} 
           onClick={enqueue} 
         />
@@ -99,34 +100,30 @@ export const QueuePage: React.FC = () => {
           extraClass={styles.button} 
           text="Удалить" 
           disabled={
-            queueElements.length === 0 || 
-            (queue.head === 6 && queue.elements[queue.head].element === '') || 
-            isLoading === true || 
-            queue.head > queue.tail - 1 ? true : false} 
+            isLoading.add || isLoading.clear || 
+            queue.head > queue.tail - 1} 
           onClick={dequeue} 
         />
         <Button 
           extraClass={styles.button} 
           text="Очистить" 
           disabled={
-            queue.isEmpty() === 0 || 
-            isLoading === true ? true : false} 
+            isLoading.add || isLoading.remove || queue.head > queue.tail - 1} 
           onClick={clear} 
         />
       </div>
       <div className={styles.container}>
-        {queue.elements.map((element, index) => {
+        {queue.elements && queue.elements.map((element, index) => {
         return <Circle 
           letter={element.element} 
           index={index} 
           key={index} 
           state={element.state} 
           head={
-            body.head === index && 
-            element.element !== undefined ? 'head' : ''} 
+            queue.head === index && 
+            element.element !== '' ? 'head' : ''} 
           tail={
-            queue.tail - 1 === index && 
-            queueElements[body.tail - 1].element !== '' ? 'tail' : ''} 
+            queue.tail - 1 === index ? 'tail' : ''} 
         />})}
       </div>
     </SolutionLayout>

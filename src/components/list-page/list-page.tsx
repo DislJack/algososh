@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import styles from './list-page.module.css';
 import { Input } from "../ui/input/input";
@@ -7,11 +7,7 @@ import { LinkedList } from "../../utils/linked-list";
 import { ElementStates } from "../../types/element-states";
 import { Circle } from "../ui/circle/circle";
 import { ArrowIcon } from "../ui/icons/arrow-icon";
-
-type TElement = {
-  element: string;
-  state: ElementStates;
-}
+import { makeDefaultState, renderRandomArray, showElementBeforeAddition, showElementBeforeDelition, TElement } from "./utils";
 
 type TIsLoading = {
   addToHead: boolean;
@@ -27,14 +23,18 @@ export const ListPage: React.FC = () => {
   // это стейты для инпутов
   const [value, setValue] = useState<string>('');
   const [index, setIndex] = useState<string>('');
-  // Это стейт динамического массива списка (Нужен только для обновления стейта)
-  const [elementsList, setElementsList] = useState<TElement[]>([]);
   // Это стейт для добавляемого элемента на страницу по индексу, в начало и хвост.
   const [elementToAdd, setElementToAdd] = useState<TElement & {index?: number}>();
+  // Стейт только для первичного рендера
+  const [isRedered, setIsRedered] = useState<boolean>(false);
   // Это сам связанный список с методами.
-  const linkedList = new LinkedList<TElement>(elementsList);
+  const linkedList = useMemo(() => new LinkedList<TElement>(), []);
   // Это массив, который можно вернуть в процессе обновления связанного списка.
   const arrayElements = linkedList.toArray();
+
+  const linkedListDelay = 500;
+  
+  
 
   const [isLoading, setIsLoading] = useState<TIsLoading>({
     addToHead: false,
@@ -43,7 +43,32 @@ export const ListPage: React.FC = () => {
     removeFromTail: false,
     addByIndex: false,
     removeByIndex: false
-  })
+  });
+
+  // Собираем все boolean элементы, отвечающие за лоадеры в одну константу.
+  const isLoadingBlock = 
+  isLoading.addToHead || 
+  isLoading.addToTail ||
+  isLoading.removeFromHead ||
+  isLoading.removeFromTail || 
+  isLoading.addByIndex ||
+  isLoading.removeByIndex;
+
+  // Общая функция валидации, которая определяет валидность кнопок в зависимости от условия валидации.
+  function validation(validationCondition: 'value' | 'zero-elements' | 'index') {
+    switch(validationCondition) {
+      case 'value': {
+        return !value.match(/^[0-9]+$/) || isLoadingBlock;
+      }
+      case 'zero-elements': {
+        return arrayElements.length === 0 || isLoadingBlock;
+      }
+      case 'index': {
+        return !index.match(/^[0-9]+$/)  || Number(index) > arrayElements.length - 1 || isLoadingBlock;
+      }
+      default: return;
+    }
+  }
 
 
   // Функция которая описывает анимацию и добавление элемента в начало списка.
@@ -55,16 +80,14 @@ export const ListPage: React.FC = () => {
       element = {element: value, state: ElementStates.Modified};
       // метод добавления елемента в начало списка 
       linkedList.prepend(element);
-      setElementsList([...linkedList.toArray()]);
       setElementToAdd(undefined);
       setTimeout(() => {
-        setElementsList(prevState => {
-          prevState[0] = {...prevState[0], state: ElementStates.Default};
-          return [...prevState];
-        });
+        if (linkedList.head !== null) {
+          linkedList.head.value = {...linkedList.head?.value, state: ElementStates.Default};
+        }
         setIsLoading(prevState => {return {...prevState, addToHead: false}});
-      }, 500);
-    }, 500);
+      }, linkedListDelay);
+    }, linkedListDelay);
   }
 
 
@@ -77,50 +100,46 @@ export const ListPage: React.FC = () => {
       element = {element: value, state: ElementStates.Modified};
       // метод добавления в список в конец.
       linkedList.append(element);
-      setElementsList([...linkedList.toArray()]);
       setElementToAdd(undefined);
       setTimeout(() => {
-        setElementsList(prevState => {
-          prevState[prevState.length - 1] = {...prevState[prevState.length - 1], state: ElementStates.Default};
-          return [...prevState];
-        });
+        if (linkedList.tail !== null) {
+          linkedList.tail.value = {...linkedList.tail.value, state: ElementStates.Default};
+        }
         setIsLoading(prevState => {return {...prevState, addToTail: false}});
-      }, 500);
-    }, 500)
+      }, linkedListDelay);
+    }, linkedListDelay)
   }
 
 
   // Удаления элемента из начала списка
   const removeFromHead = () => {
     setIsLoading(prevState => {return {...prevState, removeFromHead: true}});
-    setElementToAdd({...elementsList[0], state: ElementStates.Changing, index: 0});
-    setElementsList(prevState => {
-      prevState[0] = {...prevState[0], element: ''};
-      return [...prevState];
-    });
+    setElementToAdd({...arrayElements[0], state: ElementStates.Changing, index: 0});
+    if (linkedList.head !== null) {
+      linkedList.head.value = {...linkedList.head.value, element: ''};
+    }
     setTimeout(() => {
       // метод удаления элемента из начала списка
       linkedList.deleteHead();
       setElementToAdd(undefined);
-      setElementsList([...linkedList.toArray()]);
       setIsLoading(prevState => {return {...prevState, removeFromHead: false}});
-    }, 500);
+    }, linkedListDelay);
   }
 
+
+  // Функция удаления из хвоста с анимацией.
   const removeFromTail = () => {
     setIsLoading(prevState => {return {...prevState, removeFromTail: true}});
-    setElementToAdd({...elementsList[elementsList.length - 1], state: ElementStates.Changing, index: elementsList.length - 1});
-    setElementsList(prevState => {
-      prevState[prevState.length - 1] = {...prevState[prevState.length - 1], element: ''};
-      return [...prevState];
-    });
+    setElementToAdd({...arrayElements[arrayElements.length - 1], state: ElementStates.Changing, index: arrayElements.length - 1});
+    if (linkedList.tail !== null) {
+      linkedList.tail.value = {...linkedList.tail.value, element: ''}
+    }
     setTimeout(() => {
       // метод удаления элемента из начала списка
       linkedList.deleteTail();
       setElementToAdd(undefined);
-      setElementsList([...linkedList.toArray()]);
       setIsLoading(prevState => {return {...prevState, removeFromTail: false}});
-    }, 500);
+    }, linkedListDelay);
   }
 
 
@@ -129,27 +148,24 @@ export const ListPage: React.FC = () => {
     setIsLoading(prevState => {return {...prevState, addByIndex: true}});
     let element: TElement & {index?: number} = {element: value, state: ElementStates.Changing, index: Number(index)};
     let i = 0;
-    function tick() {
+    function tick(prev = linkedList.head, curr = linkedList.head) {
+      const result = showElementBeforeAddition(i, prev, curr);
       setElementToAdd({...element, index: i});
       if (Number(index) !== i) {
         i++;
         // Тут спрятана анимация
-        setTimeout(tick, 500);
+        setTimeout(() => tick(result.prev, result.curr), linkedListDelay);
       } else {
         setTimeout(() => {
           element = {element: value, state: ElementStates.Modified};
           // метод добавления элемента в по индексу
           linkedList.addByIndex(element, i);
-          setElementsList([...linkedList.toArray()]);
           setElementToAdd(undefined);
           setTimeout(() => {
-            setElementsList(prevState => {
-              prevState[i] = {...prevState[i], state: ElementStates.Default};
-              return [...prevState];
-            });
+            makeDefaultState(linkedList.head, linkedList.head);
             setIsLoading(prevState => {return {...prevState, addByIndex: false}});
-          }, 500);
-        }, 500);
+          }, linkedListDelay);
+        }, linkedListDelay);
       }
     }
     tick();
@@ -160,29 +176,28 @@ export const ListPage: React.FC = () => {
   const removeByIndex = () => {
     setIsLoading(prevState => {return {...prevState, removeByIndex: true}});
     let i = 0;
-    function tick() {
-      setElementsList(prevState => {
-        prevState[i] = {...prevState[i], state: ElementStates.Changing};
-        return [...prevState];
-      });
+    function tick(curr = linkedList.head, prev = linkedList.head) {
+      const result = showElementBeforeDelition(i, prev, curr);
+      setElementToAdd({element: '', state: ElementStates.Default});
       setTimeout(() => {
         if (i !== Number(index)) {
           i++;
           // Анимация метода.
-          setTimeout(tick, 500);
+          setElementToAdd(undefined);
+          setTimeout(() => tick(result.curr, result.prev), linkedListDelay);
         } else {
-          setElementToAdd({...elementsList[i], state: ElementStates.Changing, index: i});
-          setElementsList(prevState => {
-            prevState[i] = {element: '', state: ElementStates.Default};
-            return [...prevState];
-          })
+          if (result.prev !== null) {
+            const deleteElement = {...result.prev.value, state: ElementStates.Changing, index: i}
+            result.prev.value = {element: '', state: ElementStates.Default};
+            setElementToAdd(deleteElement);
+          } 
           setTimeout(() => {
             // метод удаления элемента списка по индексу
+            makeDefaultState(linkedList.head, linkedList.head);
             linkedList.deleteByIndex(i);
-            setElementsList([...linkedList.toArray()]);
             setElementToAdd(undefined);
             setIsLoading(prevState => {return {...prevState, removeByIndex: false}});
-          }, 500);
+          }, linkedListDelay);
         }
       })
       
@@ -190,30 +205,17 @@ export const ListPage: React.FC = () => {
     tick();
   }
 
-  // метод создания случайного массива чисел. (ограничен от 3 до 6)
-  const renderRandomArray = () => {
-    const quantity = Math.floor(Math.random()*6);
-    const quantityNumbers = quantity < 3 ? 3 : quantity;
-    const arr: TElement[] = [];
-    for (let i = 0; i < quantityNumbers; i++) {
-      arr.push({element: Math.floor(Math.random()*100).toString(), state: ElementStates.Default});
-    }
-    setElementsList([...arr]);
-  }
-
+  // Первичный рендер случайного списка.
   useEffect(() => {
-    renderRandomArray();
-  }, []);
+    renderRandomArray().forEach(element => {
+      linkedList.append(element);
+    });
+    // Эта часть нужна чтобы был перерендер связанного списка
+    setIsRedered(true);
+  }, [])
 
   return (
-    <SolutionLayout title="Связный список" 
-      isLoading={
-        isLoading.addToHead || 
-        isLoading.addToTail ||
-        isLoading.removeFromHead ||
-        isLoading.removeFromTail || 
-        isLoading.addByIndex ||
-        isLoading.removeByIndex}>
+    <SolutionLayout title="Связный список" isLoading={isLoadingBlock}>
       <div className={styles.grid}>
         <Input extraClass={styles.value} value={value} setState={setValue} maxLength={4} isLimitText />
         <Button 
@@ -222,13 +224,7 @@ export const ListPage: React.FC = () => {
           isLoader={isLoading.addToHead} 
           text="Добавить в head" 
           onClick={addToHead} 
-          disabled={
-            !value.match(/^[0-9]+$/) || 
-            isLoading.addToTail || 
-            isLoading.removeFromHead || 
-            isLoading.removeFromTail || 
-            isLoading.addByIndex || 
-            isLoading.removeByIndex} 
+          disabled={validation('value')} 
         />
         <Button 
           type="button" 
@@ -236,13 +232,7 @@ export const ListPage: React.FC = () => {
           isLoader={isLoading.addToTail} 
           text="Добавить в tail" 
           onClick={addToTail} 
-          disabled={
-            !value.match(/^[0-9]+$/) || 
-            isLoading.addToHead || 
-            isLoading.removeFromHead || 
-            isLoading.removeFromTail || 
-            isLoading.addByIndex || 
-            isLoading.removeByIndex} 
+          disabled={validation('value')} 
         />
         <Button 
           type="button" 
@@ -250,13 +240,7 @@ export const ListPage: React.FC = () => {
           isLoader={isLoading.removeFromHead} 
           text="Удалить из head" 
           onClick={removeFromHead} 
-          disabled={
-            arrayElements.length === 0 || 
-            isLoading.addToTail || 
-            isLoading.addToHead || 
-            isLoading.removeFromTail || 
-            isLoading.addByIndex || 
-            isLoading.removeByIndex} 
+          disabled={validation('zero-elements')} 
         />
         <Button 
           type="button" 
@@ -264,13 +248,7 @@ export const ListPage: React.FC = () => {
           isLoader={isLoading.removeFromTail} 
           text="Удалить из tail" 
           onClick={removeFromTail} 
-          disabled={
-            arrayElements.length === 0 || 
-            isLoading.addToTail || 
-            isLoading.removeFromHead || 
-            isLoading.addToHead || 
-            isLoading.addByIndex || 
-            isLoading.removeByIndex} 
+          disabled={validation('zero-elements')} 
         />
         <Input extraClass={styles.index} value={index} setState={setIndex} />
         <Button 
@@ -279,14 +257,7 @@ export const ListPage: React.FC = () => {
           text="Добавить по индексу" 
           onClick={addByIndex}
           isLoader={isLoading.addByIndex} 
-          disabled={
-            !index.match(/^[0-9]+$/) || 
-            isLoading.addToTail || 
-            isLoading.removeFromHead || 
-            isLoading.removeFromTail || 
-            isLoading.addToHead || 
-            isLoading.removeByIndex ||
-            Number(index) > arrayElements.length - 1} 
+          disabled={validation('index')} 
         />
         <Button 
           type="button" 
@@ -294,23 +265,15 @@ export const ListPage: React.FC = () => {
           text="Удалить по индексу" 
           onClick={removeByIndex} 
           isLoader={isLoading.removeByIndex}
-          disabled={
-            !index.match(/^[0-9]+$/) || 
-            isLoading.addToTail || 
-            isLoading.removeFromHead || 
-            isLoading.removeFromTail || 
-            isLoading.addByIndex || 
-            isLoading.addToHead ||
-            Number(index) > arrayElements.length - 1}
+          disabled={validation('index')}
         />
       </div>
       <div className={styles.container}>
-        {arrayElements.map((element, index) => {
+        {isRedered && linkedList.toArray().map((element, index) => {
           return (
-          <div className={styles.circledArrow}>
+          <div className={styles.circledArrow} key={index}>
             <Circle 
-            letter={element.element} 
-            key={index} 
+            letter={element.element}  
             index={index} 
             state={element.state} 
             head={elementToAdd?.index === index ? 

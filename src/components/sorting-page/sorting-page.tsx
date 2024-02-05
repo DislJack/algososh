@@ -6,14 +6,15 @@ import { Button } from "../ui/button/button";
 import { RadioInput } from "../ui/radio-input/radio-input";
 import { Column } from "../ui/column/column";
 import { ElementStates } from "../../types/element-states";
+import { bubbleSorting, choiceSorting, randomArr, TColumn } from "./utils";
 
-type TColumn = {
-  size: number; 
-  state: ElementStates;
+type TCheckedInputs = {
+  first: boolean; 
+  second: boolean;
 }
 
 export const SortingPage: React.FC = () => {
-  const [checkedInputs, setCheckedInputs] = useState<{first: boolean; second: boolean;}>({
+  const [checkedInputs, setCheckedInputs] = useState<TCheckedInputs>({
     first: true,
     second: false
   });
@@ -21,26 +22,43 @@ export const SortingPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState({
     descending: false,
     ascending: false
-  })
+  });
+  const sortingDelay = 1000;
 
-  // Функция создания случайного массива чисел.
-  const randomArr = () => {
-    let columnNumber = Math.floor(Math.random()*17);
-    if (columnNumber < 3) {
-      columnNumber = 3;
+  
+  // Функция описывающая анимацию процесса рендеринга
+  function tick(arr: TColumn[], start: number, end = arr.length - 1, curr: number, next: number, sortingDir: Direction, sortingType: 'bubble' | 'choice') {
+
+    // Смотрим какой тип сортировки у нас и вызываем соответсвующую функцию.
+    const sortingResult = sortingType === 'bubble' ? 
+      bubbleSorting(arr, start, end, curr, next, sortingDir) :
+      choiceSorting(arr, start, end, curr, next, sortingDir);
+    // Сохраняем полученные значения в стейт.
+    setColumnArray([...sortingResult.arr]);
+
+    // Проверяем, дошли ли мы до конца. Если нет, то запускаем снова функцию
+    if (sortingResult.start < sortingResult.end) {
+      // Зацикливание анимацию с условием выхода.
+      setTimeout(() => {tick(
+        sortingResult.arr, 
+        sortingResult.start, 
+        sortingResult.end, 
+        sortingResult.curr, 
+        sortingResult.next,
+        sortingDir,
+        sortingType)
+      }, sortingDelay);
+    } else {
+      setIsLoading({ascending: false, descending: false});
     }
-    let arr: TColumn[] = []
-    for (let i = 0; i < columnNumber; i++) {
-      arr = [...arr, {size: Math.floor(Math.random()*100), state: ElementStates.Default}];
-    }
-    setColumnArray(arr);
   }
+
 
   // Функция сортировки Выбором
   const startChoiceSorting = (arr: TColumn[], sortingRule: Direction): void => {
     // Входные данные размера сортировки и индексы.
     let start = 0;
-    let end = columnArray.length - 1;
+    let end = arr.length - 1;
     let index = start + 1;
     let buffer = start;
     
@@ -50,96 +68,29 @@ export const SortingPage: React.FC = () => {
     setColumnArray([...arr]);
 
     // Гиганская функция описывающая весь процесс анимации
-    setTimeout(function tick() {
-      if (sortingRule === Direction.Ascending ? 
-        arr[buffer].size > arr[index].size : 
-        arr[buffer].size < arr[index].size) 
-        {
-          buffer = index;
-      }
-      arr[index] = {...arr[index], state: ElementStates.Default};
-      index++;
-      if (index <= end) {
-        arr[index] = {...arr[index], state: ElementStates.Changing};
-      } else {
-        if (buffer !== start) {
-          const memory = arr[start];
-          arr[start] = {...arr[buffer], state: ElementStates.Modified};
-          arr[buffer] = {...memory, state: ElementStates.Default};
-        } else {
-          arr[start] = {...arr[start], state: ElementStates.Modified};
-        }
-        start++;
-        buffer = start;
-        index = start + 1;
-        if (index <= end) {
-          arr[start] = {...arr[start], state: ElementStates.Changing};
-          arr[index] = {...arr[index], state: ElementStates.Changing};
-        } else {
-          arr[start] = {...arr[start], state: ElementStates.Modified};
-        }
-      }
-      setColumnArray([...arr]);
-      
-      // Условие повторения анимации и условие выхода из анимации.
-      if (start < end) {
-        setTimeout(tick, 1000);
-      } else {
-        setIsLoading({ascending: false, descending: false});
-      }
-    }, 1000);
+    setTimeout(() => tick(arr, start, end, buffer, index, sortingRule, 'choice'), sortingDelay);
   }
 
-  // Функция сортировки пузырьком
-  const startBubbleSorting = (arr: TColumn[], sortingType: Direction) => {
-    // Это нужно для того чтобы потом перезаписывать значения.
-    let start = 0;
-    let end = arr.length - 1;
-    let curr = start;
-    let next = start + 1;
 
-    // Тут анимация первичная
-    arr[curr] = {...arr[curr], state: ElementStates.Changing};
-    arr[next] = {...arr[next], state: ElementStates.Changing};
-    setColumnArray([...arr]);
+  // Функция сортировки пузырьком (начальные значения теперь в параметрах функции)
+  const startBubbleSorting = (
+    arr: TColumn[], 
+    sortingType: Direction, 
+    end: number = arr.length - 1,
+    start: number = 0, 
+    curr: number = start, 
+    next:number = start + 1) => {
 
-    // Гиганская функция описывающая анимацию всего процесса.
-    setTimeout(function tick() {
-      if (sortingType === Direction.Ascending ? 
-        arr[curr].size > arr[next].size : 
-        arr[curr].size < arr[next].size) 
-        {
-          const buffer = arr[curr];
-          arr[curr] = arr[next];
-          arr[next] = buffer;
-      }
-      arr[curr] = {...arr[curr], state: ElementStates.Default};
-      curr++;
-      next++;
-      if (next <= end) {
-        arr[next] = {...arr[next], state: ElementStates.Changing};
-      } else {
-        arr[curr] = {...arr[curr], state: ElementStates.Modified};
-        curr = start;
-        next = start + 1;
-        end--;
-        if (curr !== end) {
-          arr[curr] = {...arr[curr], state: ElementStates.Changing};
-          arr[next] = {...arr[next], state: ElementStates.Changing};
-        } else {
-          arr[curr] = {...arr[curr], state: ElementStates.Modified};
-        }
-      }
+      // Тут анимация первичная
+      arr[curr] = {...arr[curr], state: ElementStates.Changing};
+      arr[next] = {...arr[next], state: ElementStates.Changing};
       setColumnArray([...arr]);
 
-      if (start < end) {
-        // Зацикливание анимации с условием выхода.
-        setTimeout(tick, 1000);
-      } else {
-        setIsLoading({ascending: false, descending: false});
-      }
-    }, 1000);
+      // Анимация процесса.
+      setTimeout(() => {tick(arr, start, end, curr, next, sortingType, 'bubble')
+    }, sortingDelay);
   }
+
 
   // Функция запускающая сортировку в зависимости от типа сортировки и направления
   const startSort = (sortingType: Direction): void => {
@@ -158,16 +109,18 @@ export const SortingPage: React.FC = () => {
     }
   }
 
+
   useEffect(() => {
-    randomArr();
+    setColumnArray(randomArr());
   }, []);
 
+  
   return (
     <SolutionLayout 
       title="Сортировка массива" 
       isLoading={
-        isLoading.ascending === true || 
-        isLoading.descending === true ? true : false}
+        isLoading.ascending || 
+        isLoading.descending}
     >
       <form className={styles.form}>
         <fieldset className={styles.choices}>
@@ -185,7 +138,7 @@ export const SortingPage: React.FC = () => {
           sorting={Direction.Ascending} 
           isLoader={isLoading.ascending} 
           extraClass={styles.button} 
-          disabled={isLoading.descending === true ? true : false} 
+          disabled={isLoading.descending} 
           type="button" onClick={() => startSort(Direction.Ascending)} 
         />
         <Button 
@@ -193,16 +146,16 @@ export const SortingPage: React.FC = () => {
           sorting={Direction.Descending} 
           isLoader={isLoading.descending} 
           extraClass={styles.button} 
-          disabled={isLoading.ascending === true ? true : false} 
+          disabled={isLoading.ascending} 
           type="button" onClick={() => startSort(Direction.Descending)} 
         />
         <Button 
           text="Новый массив" 
           extraClass={styles.button} 
-          type="button" onClick={randomArr} 
+          type="button" onClick={() => setColumnArray(randomArr)} 
           disabled={
-            isLoading.ascending === true || 
-            isLoading.descending === true ? true : false} 
+            isLoading.ascending || 
+            isLoading.descending} 
         />
       </form>
       <div className={styles.columns}>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { SolutionLayout } from "../ui/solution-layout/solution-layout";
 import { Input } from "../ui/input/input";
 import { Button } from "../ui/button/button";
@@ -12,28 +12,31 @@ type TStackElements = {
   state: ElementStates;
 }
 
+type TIsLoading = {
+  add: boolean; 
+  remove: boolean; 
+  clear: boolean
+}
+
 export const StackPage: React.FC = () => {
   const [value, setValue] = useState<string>('');
-  const [stackElements, setStackElements] = useState<TStackElements[]>([]);
-  const [isLoading, setIsLoading] = useState<{add: boolean; remove: boolean}>({
+  const [isLoading, setIsLoading] = useState<TIsLoading>({
     add: false,
-    remove: false
+    remove: false,
+    clear: false
   });
 
   // Сам стек. 
-  const stack = new Stack<TStackElements>(stackElements, stackElements.length);
+  const stack = useMemo(() => new Stack<TStackElements>(), []);
   
-
 
   // Метод добавления в стек элементов с анимацией.
   const push = () => {
     setIsLoading({...isLoading, add: true});
     // Сам метод стека на добавление элемента. (Остальное ниже -  анимация)
     stack.push({element: value, state: ElementStates.Changing});
-    setStackElements([...stack.elements]);
     setTimeout(() => {
       stack.elements[stack.size - 1] = {...stack.elements[stack.size - 1], state: ElementStates.Default};
-      setStackElements([...stack.elements]);
       setIsLoading({...isLoading, add: false});
     }, 500);
   }
@@ -44,10 +47,8 @@ export const StackPage: React.FC = () => {
     setIsLoading({...isLoading, remove: true});
     // Сам метод удаления Стека.
     stack.elements[stack.size - 1] = {...stack.elements[stack.size - 1], state: ElementStates.Changing};
-    setStackElements([...stack.elements]);
     setTimeout(() => {
       stack.pop();
-      setStackElements([...stack.elements]);
       setIsLoading({...isLoading, remove: false});
     }, 500);
   }
@@ -55,8 +56,12 @@ export const StackPage: React.FC = () => {
 
   // Метод обновления стека
   const clear = () => {
+    setIsLoading({...isLoading, clear: true});
+    // Сам метод удаления. Лоадеры нужны только для того, чтобы был быстрый перерендер и обновился Стек.
     stack.clear();
-    setStackElements([...stack.elements]);
+    setTimeout(() => {
+      setIsLoading({...isLoading, clear: false});
+    })
   }
 
   return (
@@ -78,7 +83,7 @@ export const StackPage: React.FC = () => {
           text="Добавить" 
           disabled={
             !value.match(/^[0-9]+$/) || 
-            isLoading.remove === true ? true : false} 
+            isLoading.remove} 
             onClick={push} 
         />
         <Button 
@@ -87,7 +92,7 @@ export const StackPage: React.FC = () => {
           text="Удалить" 
           disabled={
             stack.size === 0 || 
-            isLoading.add === true ? true : false} 
+            isLoading.add} 
             onClick={pop} 
         />
         <Button 
@@ -95,8 +100,8 @@ export const StackPage: React.FC = () => {
           text="Очистить" 
           disabled={
             stack.size === 0 || 
-            isLoading.add === true || 
-            isLoading.remove === true ? true : false} 
+            isLoading.add || 
+            isLoading.remove} 
             onClick={clear} 
         />
       </div>

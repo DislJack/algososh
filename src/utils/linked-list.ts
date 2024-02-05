@@ -20,17 +20,13 @@ type TLinkedList<T> = {
 export class LinkedList<T> implements TLinkedList<T> {
   head: LinkedListNode<T> | null;
   tail: LinkedListNode<T> | null;
-  constructor(root: T[]) {
+  constructor() {
     this.head = this.tail = null;
-    if (root.length > 0) {
-      root.forEach((value) => {
-        this.append(value);
-      })
-    }
   }
+
   prepend(item: T) {
     let node = new LinkedListNode<T>(item);
-    if (!this.head) {
+    if (this.head === null) {
       this.head = this.tail = node;
     } else {
       node.next = this.head;
@@ -40,7 +36,7 @@ export class LinkedList<T> implements TLinkedList<T> {
 
   append(item: T) {
     let node = new LinkedListNode<T>(item);
-    if (!this.tail) {
+    if (this.tail === null) {
       this.head = this.tail = node;
     } else {
       this.tail.next = node;
@@ -82,7 +78,7 @@ export class LinkedList<T> implements TLinkedList<T> {
   }
 
   deleteByIndex(index: number) {
-    if (!this.head) {
+    if (this.head === null) {
       return;
     } else {
       let curr: LinkedListNode<T> | null = this.head;
@@ -101,7 +97,7 @@ export class LinkedList<T> implements TLinkedList<T> {
             prev.next = curr.next;
           }
         } else {
-          prev.next = null;
+          this.deleteTail();
         }
         
       } else {
@@ -111,9 +107,9 @@ export class LinkedList<T> implements TLinkedList<T> {
   }
 
   deleteHead() {
-    if (!this.head) {
+    if (this.head === null) {
       return;
-    } else if (!this.head.next) {
+    } else if (this.head.next === null) {
       this.head = this.tail = null;
     } else {
       const buffer = this.head;
@@ -123,9 +119,9 @@ export class LinkedList<T> implements TLinkedList<T> {
   }
 
   deleteTail() {
-    if (!this.tail) {
+    if (this.tail === null) {
       return;
-    } else if (this.head && !this.head.next) {
+    } else if (this.head && this.head.next === null) {
       this.head = this.tail = null;
     } else {
       let curr = this.head;
@@ -137,7 +133,8 @@ export class LinkedList<T> implements TLinkedList<T> {
             curr = curr.next;
           }
         }
-        prev.next = null;
+        this.tail = prev;
+        this.tail.next = curr.next;
       }
     }
   }

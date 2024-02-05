@@ -5,11 +5,11 @@ type TStack<T> = {
 }
 
 export class Stack<T> implements TStack<T> {
-  elements: T[] = [];
+  elements: T[];
   size: number;
-  constructor(elements: T[], length: number) {
-    this.elements = elements;
-    this.size = length;
+  constructor() {
+    this.elements = [];
+    this.size = 0;
   }
 
   push(item: T) {
