@@ -1,0 +1,51 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Тестирование рендеринга кнопки: а) с текстом, б) без текста, в) блокирование, г) с индикатором загрузки Тестирование рендеринга заблокированной кнопки 1`] = `
+<button
+  className="text text_type_button text_color_primary button undefined false "
+  disabled={true}
+  type="button"
+>
+  <p
+    className="text undefined"
+  />
+</button>
+`;
+
+exports[`Тестирование рендеринга кнопки: а) с текстом, б) без текста, в) блокирование, г) с индикатором загрузки Тестирование рендеринга кнопки без текста 1`] = `
+<button
+  className="text text_type_button text_color_primary button undefined false "
+  type="button"
+>
+  <p
+    className="text undefined"
+  />
+</button>
+`;
+
+exports[`Тестирование рендеринга кнопки: а) с текстом, б) без текста, в) блокирование, г) с индикатором загрузки Тестирование рендеринга кнопки с загрузкой 1`] = `
+<button
+  className="text text_type_button text_color_primary button undefined loader "
+  disabled={true}
+  type="button"
+>
+  <img
+    alt="Загрузка."
+    className="loader_icon"
+    src="loader.svg"
+  />
+</button>
+`;
+
+exports[`Тестирование рендеринга кнопки: а) с текстом, б) без текста, в) блокирование, г) с индикатором загрузки Тестирование рендеринга кнопки с текстом 1`] = `
+<button
+  className="text text_type_button text_color_primary button undefined false "
+  type="button"
+>
+  <p
+    className="text undefined"
+  >
+    текст кнопки
+  </p>
+</button>
+`;
