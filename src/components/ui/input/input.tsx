@@ -5,6 +5,8 @@ interface InputProps extends React.HTMLProps<HTMLInputElement> {
   placeholder?: string;
   extraClass?: string;
   isLimitText?: boolean;
+  state?: string;
+  setState: React.Dispatch<React.SetStateAction<string>>
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -13,6 +15,8 @@ export const Input: React.FC<InputProps> = ({
   type = "text",
   maxLength,
   max,
+  state,
+  setState,
   isLimitText = false,
   ...rest
 }) => {
@@ -28,6 +32,8 @@ export const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         type={type}
         maxLength={maxLength}
+        value={state}
+        onChange={(evt) => setState(evt.target.value)}
         max={max}
         {...rest}
       />

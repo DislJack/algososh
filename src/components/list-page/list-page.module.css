@@ -1,0 +1,53 @@
+.container {
+  display: flex;
+  justify-content: center;
+  margin-top: 90px;
+  gap: 16px;
+}
+
+.circledArrow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-areas: 
+  'value addition-head addition-tail remove-head remove-tail'
+  'index addition-index addition-index remove-index remove-index';
+  gap: 12px;
+  justify-content: center;
+}
+
+.value {
+  grid-area: value;
+}
+
+.index {
+  grid-area: index;
+}
+
+.additionHead {
+  grid-area: addition-head;
+}
+
+.additionTail {
+  grid-area: addition-tail;
+}
+
+.removeHead {
+  grid-area: remove-head;
+}
+
+.removeTail {
+  grid-area: remove-tail;
+}
+
+.additionIndex {
+  grid-area: addition-index;
+}
+
+.removeIndex {
+  grid-area: remove-index;
+}

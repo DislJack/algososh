@@ -5,16 +5,19 @@ import { ReturnIcon } from "../icons/return-icon";
 interface ButtonProps extends React.HTMLProps<HTMLButtonElement> {
   type?: "button" | "submit" | "reset";
   extraClass?: string;
+  isLoading: boolean;
 }
 
 export const ReturnButton: React.FC<ButtonProps> = ({
   extraClass = "",
+  isLoading = false,
   ...rest
 }) => {
   return (
     <button
-      className={`${styles.button} ${extraClass}`}
+      className={`${styles.button} ${extraClass} ${isLoading === true && styles.disabled}`}
       type="button"
+      disabled={isLoading}
       {...rest}
     >
       <ReturnIcon />
