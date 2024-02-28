@@ -1,11 +1,5 @@
 describe('Тестирование компонента <Queue /> и его структуры данных', () => {
-  it('Тестирование состояния кнопки disabled при пустом инпуте', () => {
-    cy.visit('/queue');
-    cy.get('input').should('have.value', '');
-    cy.get('button p').contains('Добавить').parent().should('be.disabled');
-  })
-
-  it('Тестирование заполнения очереди, удаления из очереди и очистки очереди', () => {
+  beforeEach(() => {
     cy.visit('/queue');
     const clickToAddSeveralTimes = (numberOfClicks: number, index: number = 0, number: number = 5) => {
       if( numberOfClicks > index) {
@@ -24,10 +18,27 @@ describe('Тестирование компонента <Queue /> и его ст
           number++;
           clickToAddSeveralTimes(numberOfClicks, index, number);
         })
-      } else {
-        return;
       }
     }
+    clickToAddSeveralTimes(3);
+  })
+  it('Тестирование состояния кнопки disabled при пустом инпуте', () => {
+    cy.get('input').should('have.value', '');
+    cy.get('button p').contains('Добавить').parent().should('be.disabled');
+  })
+
+  it('Тестирование корректного добавления элемента в очередь', () => {
+    cy.get('input').clear().type('234');
+    cy.get('button p').contains('Добавить').parent().click();
+    cy.wait(500).then(() => {
+      cy.get('.text_type_circle').contains('234')
+        .parent().should('have.css', 'border', '4px solid rgb(0, 50, 255)');
+      cy.get('.text_type_circle').contains('234').parent().next().next().should('have.text', 'tail');
+    });
+  })
+
+  it('Тестирование удаления из очереди', () => {
+    
     const clickToRemoveSeveralTimes = (numberOfClicks: number, index: number = 0) => {
       if (numberOfClicks > index) {
         cy.get('button p').contains('Удалить').parent().click();
@@ -43,8 +54,11 @@ describe('Тестирование компонента <Queue /> и его ст
         return;
       }
     }
-    clickToAddSeveralTimes(4);
+    
     clickToRemoveSeveralTimes(2);
+  })
+
+  it('Тестирование корректного очистки очереди', () => {
     cy.get('button p').contains('Очистить').parent().click();
     cy.get('.text_type_circle').should('have.text', '');
   })

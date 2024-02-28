@@ -1,25 +1,34 @@
 describe('Тестирование связанного списка', () => {
-  it('Тестирование состояния disabled у кнопок добавления и удаления элементов при пустом input', () => {
+  beforeEach(() => {
     cy.visit('/list');
-    cy.get('input').first().should('have.value', '');
-    cy.get('input').last().should('have.value', '');
-    cy.get('button p').contains('Добавить в head').parent().should('be.disabled');
-    cy.get('button p').contains('Добавить в tail').parent().should('be.disabled');
-    cy.get('button p').contains('Добавить по индексу').parent().should('be.disabled');
-    cy.get('button p').contains('Удалить по индексу').parent().should('be.disabled');
+    cy.get('input').first().as('firstInput');
+    cy.get('input').last().as('lastInput');
+    cy.get('button p').contains('Добавить в head').parent().as('addToHead');
+    cy.get('button p').contains('Добавить в tail').parent().as('addToTail');
+    cy.get('button p').contains('Добавить по индексу').parent().as('addByIndex');
+    cy.get('button p').contains('Удалить по индексу').parent().as('removeByIndex');
+    cy.get('button p').contains('Удалить из head').parent().as('removeFromHead');
+    cy.get('button p').contains('Удалить из tail').parent().as('removeFromTail');
+
+  })
+  it('Тестирование состояния disabled у кнопок добавления и удаления элементов при пустом input', () => {
+    cy.get('@firstInput').should('have.value', '');
+    cy.get('@lastInput').last().should('have.value', '');
+    cy.get('@addToHead').should('be.disabled');
+    cy.get('@addToTail').should('be.disabled');
+    cy.get('@addByIndex').should('be.disabled');
+    cy.get('@removeByIndex').should('be.disabled');
   });
 
   it('Тестирование корректной отрисовки начального списка', () => {
-    cy.visit('/list');
     cy.get('.text_type_circle').parent().should('exist');
   });
 
-  it('Тестирование добавление элемента в, и удаление элемента из head', () => {
-    cy.visit('/list');
+  it('Тестирование добавление элемента в head', () => {
     const addSeveralElementsToHead = (numberOfClicks: number, index: number = 0, element: number = 101) => {
       if (numberOfClicks > index) {
-        cy.get('input').first().clear().type(String(element));
-        cy.get('button p').contains('Добавить в head').parent().click();
+        cy.get('@firstInput').clear().type(String(element));
+        cy.get('@addToHead').click();
         cy.get('p.text_type_input').contains('0').prev().prev()
           .children().first().children().should('have.text', String(element));
         cy.wait(500).then(() => {
@@ -32,14 +41,18 @@ describe('Тестирование связанного списка', () => {
           })
           
         })
-      } else {
-        return;
       }
       
     }
+    
+    addSeveralElementsToHead(2);
+    
+  })
+
+  it('Тестирование удаления элементов из head', () => {
     const removeSeveralElementsFromHead = (numberOfClicks: number, index: number = 0) => {
       if (numberOfClicks > index) {
-        cy.get('button p').contains('Удалить из head').parent().click();
+        cy.get('@removeFromHead').click();
         // Попали в Head у Circle
         cy.get('p.text_type_input').contains('0').prev().prev()
           .children().first()  // Попали в новый circle в head
@@ -49,20 +62,16 @@ describe('Тестирование связанного списка', () => {
           index++;
           removeSeveralElementsFromHead(numberOfClicks, index);
         })
-      } else {
-        return;
       }
     }
-    addSeveralElementsToHead(2);
     removeSeveralElementsFromHead(2);
   })
 
-  it('Тестирование добавление элемента в, и удаление элемента из tail', () => {
-    cy.visit('/list');
+  it('Тестирование добавление элемента в tail', () => {
     const addSeveralElementsToTail = (numberOfClicks: number, index: number = 0, element: number = 101) => {
       if (numberOfClicks > index) {
-        cy.get('input').first().clear().type(String(element));
-        cy.get('button p').contains('Добавить в tail').parent().click();
+        cy.get('@firstInput').clear().type(String(element));
+        cy.get('@addToTail').click();
         cy.get('p.text_type_input').last().prev().prev()
           .children().first().children().should('have.text', String(element));
         cy.wait(500).then(() => {
@@ -75,14 +84,18 @@ describe('Тестирование связанного списка', () => {
           })
           
         })
-      } else {
-        return;
       }
       
     }
+    
+    addSeveralElementsToTail(2);
+    
+  })
+
+  it('Тестирование удаления элементов из tail', () => {
     const removeSeveralElementsFromTail = (numberOfClicks: number, index: number = 0) => {
       if (numberOfClicks > index) {
-        cy.get('button p').contains('Удалить из tail').parent().click();
+        cy.get('@removeFromTail').click();
         // Попали в Tail у Circle
         cy.get('p.text_type_input').last().prev().prev()
           .children().first()  // Попали в новый circle в tail
@@ -92,16 +105,12 @@ describe('Тестирование связанного списка', () => {
           index++;
           removeSeveralElementsFromTail(numberOfClicks, index);
         })
-      } else {
-        return;
       }
     }
-    addSeveralElementsToTail(2);
     removeSeveralElementsFromTail(2);
   })
 
-  it('Тестирование добавления и удаления элемента по индексу', () => {
-    cy.visit('/list');
+  it('Тестирование добавления элемента по индексу', () => {
     const moveElementToAdd = (index: number, step: number = 0) => {
       cy.get('p.text_type_input').contains(String(step)).prev().prev()
           .children().children().first().next().should('have.css', 'border', '4px solid rgb(210, 82, 225)')
@@ -120,6 +129,20 @@ describe('Тестирование связанного списка', () => {
         })
       }
     }
+    
+    const addElementByIndex = (index: number, element: number) => {
+      cy.get('@firstInput').clear().type(String(element));
+      cy.get('@lastInput').clear().type(String(index));
+      cy.get('@addByIndex').click();
+      moveElementToAdd(index);
+    }
+    
+    addElementByIndex(2, 101);
+    addElementByIndex(2, 102);
+    
+  })
+
+  it('Тестирование удаления элементов из списка по индексу', () => {
     const moveElementToRemove = (index: number, step: number = 0) => {
       cy.get('p.text_type_input').contains(String(step)).prev().should('have.css', 'border', '4px solid rgb(210, 82, 225)');
       step++;
@@ -134,20 +157,12 @@ describe('Тестирование связанного списка', () => {
         })
       }
     }
-    const addElementByIndex = (index: number, element: number) => {
-      cy.get('input').first().clear().type(String(element));
-      cy.get('input').last().clear().type(String(index));
-      cy.get('button p').contains('Добавить по индексу').parent().click();
-      moveElementToAdd(index);
-    }
     const removeElementByIndex = (index: number) => {
-      cy.get('input').last().clear().type(String(index));
-      cy.get('button p').contains('Удалить по индексу').parent().click();
+      cy.get('@lastInput').clear().type(String(index));
+      cy.get('@removeByIndex').click();
       moveElementToRemove(index);
     }
-    addElementByIndex(2, 101);
-    addElementByIndex(2, 102);
-    removeElementByIndex(3);
+    removeElementByIndex(2);
     removeElementByIndex(1);
   })
 })

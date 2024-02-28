@@ -39,7 +39,7 @@ export const StringComponent: React.FC = () => {
   Если число элементов -  четное, тогда просто сортируются все пары.
   В самом конце меняется флаг, отвечающий за блокировку всех кнопок на странице. */
   const sortArray = (arr: TObjectLetters[], head: number = 0, tail: number = arr.length - 1): void => {
-    if (arr.length <= 1) {
+    if (arr.length < 1) {
       return;
     }
     arr = findElementsToSwapOrSwap(arr, head, tail, ElementStates.Changing);

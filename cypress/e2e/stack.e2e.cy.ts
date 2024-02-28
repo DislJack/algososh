@@ -1,15 +1,10 @@
 describe('Тестирование страницы <Stack /> со структурой Stack', () => {
-  it('Тестирование состояние disabled для кнопки при пустом input', () => {
+  beforeEach(() => {
     cy.visit('/stack');
-    cy.get('input').should('have.value', '');
-    cy.get('button p').contains('Добавить').parent()
-      .should('be.disabled');
     cy.get('button p').contains('Удалить').parent()
       .should('be.disabled');
-  })
-
-  it('Тестирование корректного добавления, удаления и очистки стека', () => {
-    cy.visit('/stack');
+    cy.get('button p').contains('Очистить').parent()
+      .should('be.disabled');
     const clickToAddSeveralTimes = (numberOfClicks: number, index: number = 0, number: number = 5) => {
       if( numberOfClicks > index) {
         cy.get('input').clear().type(String(number));
@@ -23,10 +18,30 @@ describe('Тестирование страницы <Stack /> со структ�
           number++;
           clickToAddSeveralTimes(numberOfClicks, index, number);
         })
-      } else {
-        return;
       }
     }
+    
+    clickToAddSeveralTimes(2);
+    cy.get('input').clear();
+  })
+  it('Тестирование состояние disabled для кнопки при пустом input', () => {
+    cy.get('input').should('have.value', '');
+    cy.get('button p').contains('Добавить').parent()
+      .should('be.disabled');
+  })
+
+  it('Тестирование корректного добавления', () => {
+    cy.get('input').type('234');
+    cy.get('button p').contains('Добавить').parent().click();
+    cy.get('.text_type_circle').contains('234')
+      .parent().should('have.css', 'border', '4px solid rgb(210, 82, 225)');
+    cy.wait(500).then(() => {
+      cy.get('.text_type_circle').contains('234')
+        .parent().should('have.css', 'border', '4px solid rgb(0, 50, 255)');
+    })
+  })
+
+  it('Тестирование корректного удаления элементов из стека', () => {
     const clickToRemoveSeveralTimes = (numberOfClicks: number, index: number = 0) => {
       if (numberOfClicks > index) {
         cy.get('button p').contains('Удалить').parent().click();
@@ -37,8 +52,10 @@ describe('Тестирование страницы <Stack /> со структ�
         return;
       }
     }
-    clickToAddSeveralTimes(4);
     clickToRemoveSeveralTimes(2);
+  });
+
+  it('Тестирование корректной очистки стека', () => {
     cy.get('input').clear();
     cy.get('button p').contains('Очистить').parent().click();
     cy.get('button p').contains('Добавить').parent().should('be.disabled');
